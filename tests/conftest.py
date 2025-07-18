@@ -9,6 +9,7 @@ load_dotenv()
 BASE_URL = "https://cf-automation-airline-api.onrender.com"
 AUTH_LOGIN = "/auth/login/"
 AIRPORT = "/airports/"
+USERS = "/users"
 fake = faker.Faker()
 
 @pytest.fixture(scope="session")
@@ -42,6 +43,23 @@ def airport(auth_headers):
     airport_response = r.json()
     yield airport_response
     requests.delete(BASE_URL + AIRPORT + f'{airport_response["iata_code"]}', headers=auth_headers, timeout=5)
+
+
+@pytest.fixture
+def user(auth_headers, role: str = "passenger"):
+
+    user_data = {
+        "email": fake.email(),
+        "password": fake.password(),
+        "full_name": fake.name(),
+        "role": role
+    }
+
+    r = requests.post(f"{BASE_URL}{USERS}", json=user_data, headers=auth_headers, timeout=5)
+    r.raise_for_status()
+    user_created = r.json()
+    yield user_created
+    requests.delete(f"{BASE_URL}{USERS}/{user_created['id']}", headers=auth_headers, timeout=5)
 
 
 def test_admin_token(admin_token):
